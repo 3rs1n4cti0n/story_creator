@@ -47,27 +47,39 @@ class _FileSystemState extends State<FileSystem> {
       height: double.infinity,
       child: Column(
         children: [
-          Container(
-            color: Colors.blueGrey[100],
-            margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
-            padding: const EdgeInsets.symmetric(vertical: 2.5, horizontal: 5),
-            width: double.infinity,
-            child: InkWell(
-              child: const Text("home"),
-              onTap: () => {getItems(Directory(".\\"))},
-            ),
+          if(MediaQuery.of(context).size.height>55)
+          Row(
+            children: [
+              Flexible(
+                child: Container(
+                  color: Colors.blueGrey[100],
+                  margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 2.5, horizontal: 5),
+                  width: 125,
+                  child: InkWell(
+                    child: const Text("home"),
+                    onTap: () => {getItems(Directory(".\\"))},
+                  ),
+                ),
+              ),
+              const SizedBox(width: 1,),
+              Flexible(
+                child: Container(
+                  margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
+                  color: Colors.blueGrey[100],
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 2.5, horizontal: 5),
+                  width: 125,
+                  child: InkWell(
+                    child: const Text("\\"),
+                    onTap: () => {getItems(parentPath)},
+                  ),
+                ),
+              ),
+            ],
           ),
-          Container(
-            margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
-            color: Colors.blueGrey[100],
-            padding: const EdgeInsets.symmetric(vertical: 2.5, horizontal: 5),
-            width: double.infinity,
-            child: InkWell(
-              child: const Text("\\"),
-              onTap: () => {getItems(parentPath)},
-            ),
-          ),
-          Flexible(
+          Expanded(
             child: ListView.builder(
                 itemCount: itemsInDir.length,
                 itemBuilder: (BuildContext context, int index) {
