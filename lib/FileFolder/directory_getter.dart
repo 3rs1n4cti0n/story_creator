@@ -34,6 +34,7 @@ class _FileSystemState extends State<FileSystem> {
     for (var i = 0; i < itemsInDir.length; i++) {
       hovering.add(false);
     }
+
     currentPath = path;
     parentPath = path.parent;
     setState(() {});
@@ -187,15 +188,58 @@ class _FileSystemState extends State<FileSystem> {
                       }
                       setState(() {});
                     },
-                    child: Container(
-                        margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
-                        color: hovering[index] ? hoverColor : color,
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 1, horizontal: 5),
-                        child: Text(
-                          itemsInDir[index].path,
-                          style: const TextStyle(color: Colors.white),
-                        )),
+                    child: Draggable(
+                      feedback: Container(
+                          margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
+                          color: color,
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 1, horizontal: 5),
+                          child: (itemsInDir[index] is! File)
+                              ? Icon(
+                                  Icons.folder,
+                                  size: 28,
+                                  color: Colors.orange[600],
+                                )
+                              : const Icon(
+                                  Icons.insert_drive_file_rounded,
+                                  size: 28,
+                                  color: Colors.white,
+                                )),
+                      child: Container(
+                          margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
+                          color: hovering[index] ? hoverColor : color,
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 1, horizontal: 5),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (itemsInDir[index] is File)
+                                const Icon(
+                                  Icons.insert_drive_file_rounded,
+                                  size: 28,
+                                  color: Colors.white,
+                                )
+                              else
+                                Icon(
+                                  Icons.folder,
+                                  size: 28,
+                                  color: Colors.orange[600],
+                                ),
+                              const SizedBox(
+                                width: 5,
+                              ),
+                              Flexible(
+                                child: Text(
+                                  itemsInDir[index].path,
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      overflow: TextOverflow.fade),
+                                ),
+                              ),
+                            ],
+                          )),
+                    ),
                   );
                 }),
           ),

@@ -1,5 +1,3 @@
-// ignore_for_file: non_constant_identifier_names
-
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/material.dart';
 import 'package:story_creator/FileFolder/directory_getter.dart';
@@ -12,14 +10,14 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  final List<String> FilesNavigation = [
+  final List<String> filesNavigation = [
     "New Project",
     "Open Project",
     "Save Project",
     "Export Project"
   ];
 
-  final List<String> Edit = [
+  final List<String> edit = [
     "Undo",
     "Redo",
     "Cut",
@@ -89,11 +87,11 @@ class _HomeState extends State<Home> {
                       padding: EdgeInsets.zero,
                       itemBuilder: (context) {
                         return [
-                          for (int i = 0; i < FilesNavigation.length; i++)
+                          for (int i = 0; i < filesNavigation.length; i++)
                             PopupMenuItem(
-                                value: FilesNavigation[i],
+                                value: filesNavigation[i],
                                 child: Text(
-                                  FilesNavigation[i],
+                                  filesNavigation[i],
                                   style: const TextStyle(color: Colors.white),
                                 ))
                         ];
@@ -115,11 +113,11 @@ class _HomeState extends State<Home> {
                       padding: EdgeInsets.zero,
                       itemBuilder: (context) {
                         return [
-                          for (int i = 0; i < Edit.length; i++)
+                          for (int i = 0; i < edit.length; i++)
                             PopupMenuItem(
-                                value: Edit[i],
+                                value: edit[i],
                                 child: Text(
-                                  Edit[i],
+                                  edit[i],
                                   style: const TextStyle(color: Colors.white),
                                 ))
                         ];
