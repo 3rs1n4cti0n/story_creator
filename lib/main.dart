@@ -8,13 +8,13 @@ void main(List<String> args) {
       debugShowCheckedModeBanner: false,
       initialRoute: '/home',
       routes: {
-        '/home': (context) => Home(),
+        '/home': (context) => const Home(),
       },
     )
   );
   doWhenWindowReady((){
     final win = appWindow;
-    win.minSize = Size(600,480);
+    win.minSize = const Size(600,480);
     win.alignment = Alignment.center;
     win.title = "RBT Visual Novel Maker";
   });
