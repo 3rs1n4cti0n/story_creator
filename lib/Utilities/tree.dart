@@ -1,7 +1,9 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:story_creator/Utilities/Character.dart';
 
-class StoryTree {
-  late String text;
+class Branch {
+  late Map<String,String> story;
   late Image background;
-  List<StoryTree> storyPath = [];
+  late List<Character> characters;
+  List<Branch> storyPath = [];
 }
