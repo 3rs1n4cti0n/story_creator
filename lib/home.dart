@@ -1,5 +1,3 @@
-// ignore_for_file: non_constant_identifier_names
-
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/material.dart';
 import 'package:story_creator/FileFolder/directory_getter.dart';
@@ -12,14 +10,14 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  final List<String> FilesNavigation = [
+  final List<String> filesNavigation = [
     "New Project",
     "Open Project",
     "Save Project",
     "Export Project"
   ];
 
-  final List<String> Edit = [
+  final List<String> edit = [
     "Undo",
     "Redo",
     "Cut",
@@ -40,112 +38,139 @@ class _HomeState extends State<Home> {
       iconNormal: Colors.white,
       iconMouseOver: Colors.white);
 
-  void maximizeOrRestore() {
-    setState(() {
-      appWindow.maximizeOrRestore();
-    });
-  }
+  
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.blueGrey[600],
       appBar: AppBar(
-          leadingWidth: 120,
+          leadingWidth: 150,
           backgroundColor: Colors.blueGrey[900],
           toolbarHeight: 30,
           elevation: 0,
           title: WindowTitleBarBox(child: MoveWindow()),
-          actions: [
-            MinimizeWindowButton(colors: buttonColors),
-            appWindow.isMaximized
-                ? RestoreWindowButton(
-                    colors: buttonColors,
-                    onPressed: maximizeOrRestore,
-                  )
-                : MaximizeWindowButton(
-                    colors: buttonColors,
-                    onPressed: maximizeOrRestore,
-                  ),
-            CloseWindowButton(colors: closeButtonColors),
-          ],
-          leading: Row(children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Theme(
-                  data: Theme.of(context).copyWith(
-                    highlightColor: Colors.transparent,
-                    splashColor: Colors.transparent,
-                  ),
-                  child: PopupMenuButton(
-                      // TODO: add functionality to the buttons
-                      onSelected: ((value) {}),
-                      iconSize: 20,
-                      tooltip: "Files",
-                      color: Colors.blueGrey[900],
-                      position: PopupMenuPosition.under,
-                      icon: const Icon(Icons.folder,color: Colors.white,),
-                      padding: EdgeInsets.zero,
-                      itemBuilder: (context) {
-                        return [
-                          for (int i = 0; i < FilesNavigation.length; i++)
-                            PopupMenuItem(
-                                value: FilesNavigation[i],
-                                child: Text(
-                                  FilesNavigation[i],
-                                  style: const TextStyle(color: Colors.white),
-                                ))
-                        ];
-                      }),
-                ),
-                Theme(
-                  data: Theme.of(context).copyWith(
-                    highlightColor: Colors.transparent,
-                    splashColor: Colors.transparent,
-                  ),
-                  child: PopupMenuButton(
-                      // TODO: add functionality to the buttons
-                      onSelected: ((value) {}),
-                      iconSize: 20,
-                      tooltip: "Edit",
-                      color: Colors.blueGrey[900],
-                      position: PopupMenuPosition.under,
-                      icon: const Icon(Icons.edit,color: Colors.white,),
-                      padding: EdgeInsets.zero,
-                      itemBuilder: (context) {
-                        return [
-                          for (int i = 0; i < Edit.length; i++)
-                            PopupMenuItem(
-                                value: Edit[i],
-                                child: Text(
-                                  Edit[i],
-                                  style: const TextStyle(color: Colors.white),
-                                ))
-                        ];
-                      }),
-                ),
-                // TODO: add functionality to the button
-                Theme(
-                  data: Theme.of(context).copyWith(
-                    highlightColor: Colors.transparent,
-                    splashColor: Colors.transparent,
-                  ),
-                  child: IconButton(
-                      tooltip: "Run",
-                      padding: EdgeInsets.zero,
-                      alignment: Alignment.center,
-                      onPressed: () {},
-                      icon: const Icon(
-                        Icons.play_arrow_rounded,
-                        size: 28,
-                        color: Colors.white,
-                      )),
-                )
-              ],
-            ),
-          ])),
-      body: FileSystem(),
+          actions: windowFrameButtons,
+          leading: functionalityMenu(context)),
+      body: Row(
+        children: [
+          
+          FilesAndDirectories(),
+          // TODO: implement StorylineWindow
+          //StorylineWindow(),
+          // TODO: implement Inspector for branches
+          //Inspector(),
+
+        ],
+      ),
     );
+  }
+
+  void maximizeOrRestore() {
+    setState(() {
+      appWindow.maximizeOrRestore();
+    });
+  }
+
+  List<Widget> get windowFrameButtons {
+    return [
+          MinimizeWindowButton(colors: buttonColors),
+          appWindow.isMaximized
+              ? RestoreWindowButton(
+                  colors: buttonColors,
+                  onPressed: maximizeOrRestore,
+                )
+              : MaximizeWindowButton(
+                  colors: buttonColors,
+                  onPressed: maximizeOrRestore,
+                ),
+          CloseWindowButton(colors: closeButtonColors),
+        ];
+  }
+
+  Row functionalityMenu(BuildContext context) {
+    return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 5),
+              child: Image.asset("Assets/app_icon.png",width: 20,height: 20,)),
+            Theme(
+              data: Theme.of(context).copyWith(
+                highlightColor: Colors.transparent,
+                splashColor: Colors.transparent,
+              ),
+              child: PopupMenuButton(
+                  // TODO: add functionality to the buttons
+                  onSelected: ((value) {}),
+                  iconSize: 20,
+                  tooltip: "Files",
+                  color: Colors.blueGrey[900],
+                  position: PopupMenuPosition.under,
+                  icon: const Icon(
+                    Icons.folder,
+                    color: Colors.white,
+                  ),
+                  padding: EdgeInsets.zero,
+                  itemBuilder: (context) {
+                    return [
+                      for (int i = 0; i < filesNavigation.length; i++)
+                        PopupMenuItem(
+                            value: filesNavigation[i],
+                            child: Text(
+                              filesNavigation[i],
+                              style: const TextStyle(color: Colors.white),
+                            ))
+                    ];
+                  }),
+            ),
+            Theme(
+              data: Theme.of(context).copyWith(
+                highlightColor: Colors.transparent,
+                splashColor: Colors.transparent,
+              ),
+              child: PopupMenuButton(
+                  // TODO: add functionality to the buttons
+                  onSelected: ((value) {}),
+                  iconSize: 20,
+                  tooltip: "Edit",
+                  color: Colors.blueGrey[900],
+                  position: PopupMenuPosition.under,
+                  icon: const Icon(
+                    Icons.edit,
+                    color: Colors.white,
+                  ),
+                  padding: EdgeInsets.zero,
+                  itemBuilder: (context) {
+                    return [
+                      for (int i = 0; i < edit.length; i++)
+                        PopupMenuItem(
+                            value: edit[i],
+                            child: Text(
+                              edit[i],
+                              style: const TextStyle(color: Colors.white),
+                            ))
+                    ];
+                  }),
+            ),
+            // TODO: add functionality to the button
+            Theme(
+              data: Theme.of(context).copyWith(
+                highlightColor: Colors.transparent,
+                splashColor: Colors.transparent,
+              ),
+              child: IconButton(
+                  tooltip: "Run",
+                  padding: EdgeInsets.zero,
+                  alignment: Alignment.center,
+                  onPressed: () {},
+                  icon: const Icon(
+                    Icons.play_arrow_rounded,
+                    size: 28,
+                    color: Colors.white,
+                  )),
+            )
+          ],
+        );
   }
 }
