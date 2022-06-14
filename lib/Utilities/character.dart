@@ -7,6 +7,7 @@ class Character {
   Image? currentReaction;
   String characterName;
   late Map<String, int> characterAttributes;
+  double x = 0,y = 0;
   int maxHearts;
   int minHearts;
   int hearts = 0;
