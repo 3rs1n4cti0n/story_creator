@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
+import 'package:file_picker/file_picker.dart';
 
 class FilesAndDirectories extends StatefulWidget {
   FilesAndDirectories({Key? key}) : super(key: key);
@@ -18,6 +19,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
   late Directory parentPath;
   Color? hoverColor = Colors.blueGrey;
   Color? color = Colors.transparent;
+  List<File> files = [];
 
   @override
   void initState() {
@@ -186,7 +188,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
               color: Colors.white,
             ),
             onTap: () => {
-              //TODO: add file selection and importing
+              getFiles()
             },
           ),
         )),
@@ -282,5 +284,22 @@ class _FileSystemState extends State<FilesAndDirectories> {
     String fileName = path.basename(sourceFile.path);
     String destination = "$newPath\\$fileName";
     sourceFile.rename(destination);
+  }
+  
+  getFiles() async{
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      type: FileType.image,
+      allowedExtensions: ["jpg","png"]
+      );
+
+    if(result!=null)
+    {
+      files = result.paths.map((path) => File(path!)).toList();
+      print(files);
+    }
+    else{
+      // didn't pick File
+    }
   }
 }

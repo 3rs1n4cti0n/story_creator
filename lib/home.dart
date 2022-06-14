@@ -56,13 +56,11 @@ class _HomeState extends State<Home> {
           leading: functionalityMenu(context)),
       body: Row(
         children: [
-          
           FilesAndDirectories(),
           // TODO: implement StorylineWindow
           //StorylineWindow(),
           // TODO: implement Inspector for branches
           //Inspector(),
-
         ],
       ),
     );
