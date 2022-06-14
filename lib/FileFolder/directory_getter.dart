@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as path;
 
 class FilesAndDirectories extends StatefulWidget {
   FilesAndDirectories({Key? key}) : super(key: key);
@@ -65,7 +66,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
     String folderName = "";
     return showDialog<void>(
       context: context,
-      barrierDismissible: false, // user must tap button!
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text(
@@ -135,7 +136,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
             width: 125,
             child: InkWell(
               child: const Icon(
-                Icons.home_rounded,
+                Icons.home_outlined,
                 color: Colors.white,
               ),
               onTap: () => {getItems(Directory(".\\"))},
@@ -150,7 +151,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
             width: 125,
             child: InkWell(
               child: const Icon(
-                Icons.keyboard_backspace_rounded,
+                Icons.keyboard_backspace_outlined,
                 color: Colors.white,
               ),
               onTap: () => {
@@ -173,6 +174,22 @@ class _FileSystemState extends State<FilesAndDirectories> {
             onTap: () => {folderCreateDialog()},
           ),
         )),
+        Flexible(
+            child: Container(
+          margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
+          color: color,
+          padding: const EdgeInsets.symmetric(vertical: 2.5, horizontal: 5),
+          width: 125,
+          child: InkWell(
+            child: const Icon(
+              Icons.file_open_outlined,
+              color: Colors.white,
+            ),
+            onTap: () => {
+              //TODO: add file selection and importing
+            },
+          ),
+        )),
       ],
     );
   }
@@ -182,9 +199,10 @@ class _FileSystemState extends State<FilesAndDirectories> {
       child: ListView.builder(
           itemCount: itemsInDir.length,
           itemBuilder: (BuildContext context, int index) {
+            final item = itemsInDir[index];
             return InkWell(
               onTap: () => {
-                getItems(Directory(itemsInDir[index].path)),
+                getItems(Directory(item.path)),
               },
               onHover: (ishover) {
                 if (ishover == true) {
@@ -196,18 +214,18 @@ class _FileSystemState extends State<FilesAndDirectories> {
               },
               child: DragTarget<FileSystemEntity>(
                 onAccept: (data) {
-                  
-                  setState(() {});
+                  moveFile(data,item.path);
+                  getItems(item.parent);
                 },
                 builder: (context, candidateData, rejectedData) {
                   return Draggable(
-                    data: itemsInDir[index],
+                    data: item,
                     feedback: Container(
                         margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
                         color: color,
                         padding: const EdgeInsets.symmetric(
                             vertical: 1, horizontal: 5),
-                        child: (itemsInDir[index] is! File)
+                        child: (item is! File)
                             ? Icon(
                                 Icons.folder,
                                 size: 28,
@@ -227,7 +245,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
                           mainAxisAlignment: MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (itemsInDir[index] is File)
+                            if (item is File)
                               const Icon(
                                 Icons.insert_drive_file_rounded,
                                 size: 28,
@@ -244,7 +262,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
                             ),
                             Flexible(
                               child: Text(
-                                itemsInDir[index].path,
+                                item.path,
                                 style: const TextStyle(
                                     color: Colors.white,
                                     overflow: TextOverflow.fade),
@@ -260,20 +278,9 @@ class _FileSystemState extends State<FilesAndDirectories> {
     );
   }
 
-  void moveFolder(Directory folderPath, String destinationPath) async {
-    try {
-      folderPath.rename(destinationPath);
-    } catch (e) {
-      folderPath.rename(destinationPath);
-    }
-  }
-
-  void moveFile(File sourceFile, String newPath) async {
-    try {
-      await sourceFile.rename(newPath);
-    } on FileSystemException {
-      await sourceFile.copy(newPath);
-      await sourceFile.delete();
-    }
+  void moveFile(FileSystemEntity sourceFile, String newPath) async {
+    String fileName = path.basename(sourceFile.path);
+    String destination = "$newPath\\$fileName";
+    sourceFile.rename(destination);
   }
 }
