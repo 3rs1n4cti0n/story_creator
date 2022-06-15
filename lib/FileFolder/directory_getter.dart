@@ -19,11 +19,11 @@ class _FileSystemState extends State<FilesAndDirectories> {
   late Directory parentPath;
   Color? hoverColor = Colors.blueGrey;
   Color? color = Colors.transparent;
-  List<File> files = [];
+  final Directory projectPath = Directory(Directory.current.path);
 
   @override
   void initState() {
-    getItems(Directory(".\\"));
+    getItems(projectPath.absolute);
     super.initState();
   }
 
@@ -47,7 +47,6 @@ class _FileSystemState extends State<FilesAndDirectories> {
     var completer = Completer<List<FileSystemEntity>>();
     var lister = dir.list(recursive: false);
     lister.listen((file) => files.add(file),
-        // should also register onError
         onDone: () => completer.complete(files));
 
     return completer.future;
@@ -141,7 +140,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
                 Icons.home_outlined,
                 color: Colors.white,
               ),
-              onTap: () => {getItems(Directory(".\\"))},
+              onTap: () => {getItems(projectPath.absolute)},
             ),
           ),
         ),
@@ -157,7 +156,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
                 color: Colors.white,
               ),
               onTap: () => {
-                getItems(parentPath),
+                if (currentPath.path != projectPath.path) getItems(parentPath)
               },
             ),
           ),
@@ -187,9 +186,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
               Icons.file_open_outlined,
               color: Colors.white,
             ),
-            onTap: () => {
-              getFiles()
-            },
+            onTap: () => {getFiles()},
           ),
         )),
       ],
@@ -202,9 +199,22 @@ class _FileSystemState extends State<FilesAndDirectories> {
           itemCount: itemsInDir.length,
           itemBuilder: (BuildContext context, int index) {
             final item = itemsInDir[index];
+            var pos = item.path.lastIndexOf("/");
+            if (pos == -1) {
+              pos = item.path.lastIndexOf("\\");
+            }
+            String itemPathName = (pos != -1)
+                ? item.path.substring(pos + 1, item.path.length)
+                : item.path;
             return InkWell(
               onTap: () => {
-                getItems(Directory(item.path)),
+                // removes cuntionality for files
+                if (item.existsSync() && item is! File)
+                  getItems(Directory(item.path))
+                else if (item is File)
+                  {}
+                else
+                  getItems(projectPath)
               },
               onHover: (ishover) {
                 if (ishover == true) {
@@ -216,8 +226,11 @@ class _FileSystemState extends State<FilesAndDirectories> {
               },
               child: DragTarget<FileSystemEntity>(
                 onAccept: (data) {
-                  moveFile(data,item.path);
-                  getItems(item.parent);
+                  // can't drop items to themselves
+                  if (data.path != item.path) {
+                    movefile(data, item.path);
+                    getItems(item.parent);
+                  }
                 },
                 builder: (context, candidateData, rejectedData) {
                   return Draggable(
@@ -262,9 +275,9 @@ class _FileSystemState extends State<FilesAndDirectories> {
                             const SizedBox(
                               width: 5,
                             ),
-                            Flexible(
+                            Expanded(
                               child: Text(
-                                item.path,
+                                itemPathName,
                                 style: const TextStyle(
                                     color: Colors.white,
                                     overflow: TextOverflow.fade),
@@ -280,26 +293,35 @@ class _FileSystemState extends State<FilesAndDirectories> {
     );
   }
 
-  void moveFile(FileSystemEntity sourceFile, String newPath) async {
-    String fileName = path.basename(sourceFile.path);
-    String destination = "$newPath\\$fileName";
-    sourceFile.rename(destination);
+  void movefile(FileSystemEntity sourceFile, String newPath) async {
+    await moveFile(sourceFile, newPath);
   }
-  
-  getFiles() async{
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      allowMultiple: true,
-      type: FileType.image,
-      allowedExtensions: ["jpg","png"]
-      );
 
-    if(result!=null)
-    {
-      files = result.paths.map((path) => File(path!)).toList();
-      print(files);
+  Future<void> moveFile(FileSystemEntity sourceFile, String newPath) async {
+    if (Directory(newPath).existsSync()) {
+      String fileName = path.basename(sourceFile.path);
+      String destination = "$newPath\\$fileName";
+      sourceFile.rename(destination);
     }
-    else{
+  }
+
+  getFiles() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.custom,
+        allowedExtensions: ['png', 'jpg']);
+
+    if (result != null) {
+      List<File> files =
+          result.paths.map((fromPath) => File(fromPath!)).toList();
+      for (var image in files) {
+        moveFile(image, "${projectPath.path}\\Assets");
+      }
+    } else {
       // didn't pick File
     }
+
+    currentPath = projectPath.absolute;
+    getItems(currentPath);
   }
 }
