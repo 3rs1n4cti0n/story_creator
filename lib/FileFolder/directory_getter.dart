@@ -13,13 +13,19 @@ class FilesAndDirectories extends StatefulWidget {
 }
 
 class _FileSystemState extends State<FilesAndDirectories> {
+
+  // for getting files and directories
   List<FileSystemEntity> itemsInDir = [];
+
+  // to add color change on hover
   List<bool> hovering = [];
-  late Directory currentPath;
-  late Directory parentPath;
   Color? hoverColor = Colors.blueGrey;
   Color? color = Colors.transparent;
+
+  // caching project path due to file picker changing working directory
   final Directory projectPath = Directory(Directory.current.path);
+  late Directory currentPath;
+  late Directory parentPath;
 
   @override
   void initState() {
@@ -27,6 +33,12 @@ class _FileSystemState extends State<FilesAndDirectories> {
     super.initState();
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  // Build function for Directory Path Navigator Menu
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -42,27 +54,28 @@ class _FileSystemState extends State<FilesAndDirectories> {
     );
   }
 
+  // gets a list of all files and directories in given path as FileSystemEntity
   Future<List<FileSystemEntity>> dirContents(Directory dir) {
     var files = <FileSystemEntity>[];
     var completer = Completer<List<FileSystemEntity>>();
     var lister = dir.list(recursive: false);
     lister.listen((file) => files.add(file),
         onDone: () => completer.complete(files));
-
     return completer.future;
   }
 
+  // initializes hover for each item, waits for directory contents and sets current path and parent path
   void getItems(Directory path) async {
     itemsInDir = await dirContents(path);
     for (var i = 0; i < itemsInDir.length; i++) {
       hovering.add(false);
     }
-
     currentPath = path;
     parentPath = path.parent;
     setState(() {});
   }
 
+  // Shows a dialog for creating folders
   Future<void> folderCreateDialog() async {
     String folderName = "";
     return showDialog<void>(
@@ -126,6 +139,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
     );
   }
 
+  // Buttons for navigating directories, creating folders and importing images
   Widget directoryButtons() {
     return Row(
       children: [
@@ -145,21 +159,26 @@ class _FileSystemState extends State<FilesAndDirectories> {
           ),
         ),
         Flexible(
-          child: Container(
-            margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
-            color: color,
-            padding: const EdgeInsets.symmetric(vertical: 2.5, horizontal: 5),
-            width: 125,
-            child: InkWell(
-              child: const Icon(
-                Icons.keyboard_backspace_outlined,
-                color: Colors.white,
+          child: DragTarget<FileSystemEntity>(onAccept: (data) {
+            movefile(data, currentPath.parent.path);
+            getItems(currentPath);
+          }, builder: (context, candidateData, rejectedData) {
+            return Container(
+              margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
+              color: color,
+              padding: const EdgeInsets.symmetric(vertical: 2.5, horizontal: 5),
+              width: 125,
+              child: InkWell(
+                child: const Icon(
+                  Icons.keyboard_backspace_outlined,
+                  color: Colors.white,
+                ),
+                onTap: () => {
+                  if (currentPath.path != projectPath.path) getItems(parentPath)
+                },
               ),
-              onTap: () => {
-                if (currentPath.path != projectPath.path) getItems(parentPath)
-              },
-            ),
-          ),
+            );
+          }),
         ),
         Flexible(
             child: Container(
@@ -193,6 +212,10 @@ class _FileSystemState extends State<FilesAndDirectories> {
     );
   }
 
+  // Uses directory and files to create draggable and clickable directories,
+  // If a folder is clicked changes current directory to the click targets' directory
+  // if a file is clicked nothing happens
+  // if file doesn't exist, returns to main project path
   Expanded dragableDirectories() {
     return Expanded(
       child: ListView.builder(
@@ -293,10 +316,12 @@ class _FileSystemState extends State<FilesAndDirectories> {
     );
   }
 
+  // waits for the file to be moved into specified folder path
   void movefile(FileSystemEntity sourceFile, String newPath) async {
     await moveFile(sourceFile, newPath);
   }
 
+  // async function to move files into specified path
   Future<void> moveFile(FileSystemEntity sourceFile, String newPath) async {
     if (Directory(newPath).existsSync()) {
       String fileName = path.basename(sourceFile.path);
@@ -305,6 +330,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
     }
   }
 
+  // file picker to get images
   getFiles() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
         allowMultiple: true,
@@ -320,7 +346,6 @@ class _FileSystemState extends State<FilesAndDirectories> {
     } else {
       // didn't pick File
     }
-
     currentPath = projectPath.absolute;
     getItems(currentPath);
   }

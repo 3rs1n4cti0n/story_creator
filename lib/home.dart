@@ -12,6 +12,7 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  // used to create Pop up menu items
   final List<String> filesNavigation = [
     "New Project",
     "Open Project",
@@ -27,6 +28,7 @@ class _HomeState extends State<Home> {
     "Paste",
   ];
 
+  // windows apps close, expand, minimize button colors
   final buttonColors = WindowButtonColors(
       iconNormal: Colors.white,
       mouseOver: Colors.blueGrey[700],
@@ -39,8 +41,6 @@ class _HomeState extends State<Home> {
       mouseDown: const Color(0xFFB71C1C),
       iconNormal: Colors.white,
       iconMouseOver: Colors.white);
-
-  
 
   @override
   Widget build(BuildContext context) {
@@ -66,12 +66,14 @@ class _HomeState extends State<Home> {
     );
   }
 
+  // utility function for expanding or restoring window size
   void maximizeOrRestore() {
     setState(() {
       appWindow.maximizeOrRestore();
     });
   }
 
+  // windows close, expanded minimize buttons
   List<Widget> get windowFrameButtons {
     return [
           MinimizeWindowButton(colors: buttonColors),
@@ -88,6 +90,7 @@ class _HomeState extends State<Home> {
         ];
   }
 
+  // window Frame buttons
   Row functionalityMenu(BuildContext context) {
     return Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -101,7 +104,7 @@ class _HomeState extends State<Home> {
                 splashColor: Colors.transparent,
               ),
               child: PopupMenuButton(
-                  // TODO: add functionality to the buttons
+                  // TODO: add Files popup menu functionality
                   onSelected: ((value) {}),
                   iconSize: 20,
                   tooltip: "Files",
@@ -130,7 +133,7 @@ class _HomeState extends State<Home> {
                 splashColor: Colors.transparent,
               ),
               child: PopupMenuButton(
-                  // TODO: add functionality to the buttons
+                  // TODO: add Edit popup menu functionality
                   onSelected: ((value) {}),
                   iconSize: 20,
                   tooltip: "Edit",
@@ -153,7 +156,7 @@ class _HomeState extends State<Home> {
                     ];
                   }),
             ),
-            // TODO: add functionality to the button
+            // TODO: add functionality for running the engine in testing
             Theme(
               data: Theme.of(context).copyWith(
                 highlightColor: Colors.transparent,
