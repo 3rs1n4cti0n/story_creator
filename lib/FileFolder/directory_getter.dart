@@ -31,12 +31,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
     getItems(projectPath.absolute);
     super.initState();
   }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
+  
   // Build function for Directory Path Navigator Menu
   @override
   Widget build(BuildContext context) {
@@ -147,10 +142,12 @@ class _FileSystemState extends State<FilesAndDirectories> {
           return AlertDialog(
             backgroundColor: Colors.blueGrey[800],
             title: const Text(
-              "Are you Sure you want to delete file named:",
-              style: TextStyle(color: Colors.white),
+              "Are you Sure you want to delete",
+              style: TextStyle(color: Colors.white,),
             ),
-            content: const SingleChildScrollView(),
+            content: SingleChildScrollView(
+              child: Text(path.basename(toBeDeletedFile.path),style: const TextStyle(color: Colors.white)),
+            ),
             actions: [
               TextButton(
                   onPressed: () {
@@ -256,13 +253,6 @@ class _FileSystemState extends State<FilesAndDirectories> {
           itemCount: itemsInDir.length,
           itemBuilder: (BuildContext context, int index) {
             final item = itemsInDir[index];
-            var pos = item.path.lastIndexOf("/");
-            if (pos == -1) {
-              pos = item.path.lastIndexOf("\\");
-            }
-            String itemPathName = (pos != -1)
-                ? item.path.substring(pos + 1, item.path.length)
-                : item.path;
             return InkWell(
               onTap: () => {
                 // removes cuntionality for files
@@ -334,7 +324,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
                             ),
                             Expanded(
                               child: Text(
-                                itemPathName,
+                                path.basename(item.path),
                                 style: const TextStyle(
                                     color: Colors.white,
                                     overflow: TextOverflow.fade),
@@ -394,9 +384,9 @@ class _FileSystemState extends State<FilesAndDirectories> {
     currentPath = projectPath.absolute;
     getItems(currentPath);
   }
-  
+
   //************** DANGEROUS **************//
-  // deletes files and folders recursively
+  //*deletes files and folders recursively*//
   void deleteFile(FileSystemEntity sourceFile) {
     if (sourceFile.existsSync()) {
       sourceFile.deleteSync(recursive: true);
