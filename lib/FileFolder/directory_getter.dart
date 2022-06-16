@@ -13,7 +13,6 @@ class FilesAndDirectories extends StatefulWidget {
 }
 
 class _FileSystemState extends State<FilesAndDirectories> {
-
   // for getting files and directories
   List<FileSystemEntity> itemsInDir = [];
 
@@ -137,6 +136,41 @@ class _FileSystemState extends State<FilesAndDirectories> {
         );
       },
     );
+  }
+
+  // shows deleting a file dialog
+  Future<void> deleteDialog(FileSystemEntity toBeDeletedFile) async {
+    return showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            backgroundColor: Colors.blueGrey[800],
+            title: const Text(
+              "Are you Sure you want to delete file named:",
+              style: TextStyle(color: Colors.white),
+            ),
+            content: const SingleChildScrollView(),
+            actions: [
+              TextButton(
+                  onPressed: () {
+                    deleteFile(toBeDeletedFile);
+                    getItems(toBeDeletedFile.parent);
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text("Approve",
+                      style: TextStyle(color: Colors.white))),
+              TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text(
+                    "Cancel",
+                    style: TextStyle(color: Colors.white),
+                  ))
+            ],
+          );
+        });
   }
 
   // Buttons for navigating directories, creating folders and importing images
@@ -307,10 +341,14 @@ class _FileSystemState extends State<FilesAndDirectories> {
                               ),
                             ),
                             InkWell(
-                              child: const Icon(Icons.delete_outlined),
+                              child: const Icon(
+                                Icons.delete_forever_outlined,
+                                size: 24,
+                                color: Colors.white,
+                              ),
                               onTap: () {
-                                deleteFile(item);
-                                
+                                deleteDialog(item);
+                                getItems(item.parent);
                               },
                             )
                           ],
@@ -356,9 +394,12 @@ class _FileSystemState extends State<FilesAndDirectories> {
     currentPath = projectPath.absolute;
     getItems(currentPath);
   }
-
-  Future<void> deleteFile(FileSystemEntity sourceFile) async
-  {
-    await sourceFile.delete();
+  
+  //************** DANGEROUS **************//
+  // deletes files and folders recursively
+  void deleteFile(FileSystemEntity sourceFile) {
+    if (sourceFile.existsSync()) {
+      sourceFile.deleteSync(recursive: true);
+    }
   }
 }
