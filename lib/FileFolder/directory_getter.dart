@@ -460,25 +460,26 @@ class _FileSystemState extends State<FilesAndDirectories> {
   //************** DANGEROUS **************//
   //*     renames files and folders       *//
   void renameFile(FileSystemEntity sourceFile, String newName) {
+    String sourcePath = sourceFile.path;
+    int lastSeparator = sourcePath.lastIndexOf(Platform.pathSeparator);
     if (sourceFile is! File) {
-      var path = sourceFile.path;
-      var lastSeparator = path.lastIndexOf(Platform.pathSeparator);
-      var newPath = path.substring(0, lastSeparator + 1) + newName;
+      // calculates new path without extension for folders
+      var newPath = sourcePath.substring(0, lastSeparator + 1) + newName;
       sourceFile.rename(newPath);
-    } else if (sourceFile is File) {
+    } else {
+      // gets extension of file such as .png or .jpeg
       String extentionName = path.basename(sourceFile.path);
       var pos = extentionName.lastIndexOf(".");
       extentionName = extentionName.substring(pos, extentionName.length);
 
-      String sourcePath = sourceFile.path;
-      int lastSeparator = sourcePath.lastIndexOf(Platform.pathSeparator);
+      // calculates new path with extention
       String newPath =
           sourcePath.substring(0, lastSeparator + 1) + newName + extentionName;
+
+      // checks if file already exists or not
       if (!File(newPath).existsSync()) {
         sourceFile.rename(newPath);
-      } else {
-        // show that file name already exists
       }
-    } else {}
+    }
   }
 }
