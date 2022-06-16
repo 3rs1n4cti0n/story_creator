@@ -2,6 +2,8 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as path;
+import 'package:file_picker/file_picker.dart';
 
 class FilesAndDirectories extends StatefulWidget {
   FilesAndDirectories({Key? key}) : super(key: key);
@@ -11,19 +13,26 @@ class FilesAndDirectories extends StatefulWidget {
 }
 
 class _FileSystemState extends State<FilesAndDirectories> {
+  // for getting files and directories
   List<FileSystemEntity> itemsInDir = [];
+
+  // to add color change on hover
   List<bool> hovering = [];
-  late Directory currentPath;
-  late Directory parentPath;
   Color? hoverColor = Colors.blueGrey;
   Color? color = Colors.transparent;
 
+  // caching project path due to file picker changing working directory
+  final Directory projectPath = Directory(Directory.current.path);
+  late Directory currentPath;
+  late Directory parentPath;
+
   @override
   void initState() {
-    getItems(Directory(".\\"));
+    getItems(projectPath.absolute);
     super.initState();
   }
 
+  // Build function for Directory Path Navigator Menu
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -39,91 +48,187 @@ class _FileSystemState extends State<FilesAndDirectories> {
     );
   }
 
-  Future<List<FileSystemEntity>> dirContents(Directory dir) {
-    var files = <FileSystemEntity>[];
-    var completer = Completer<List<FileSystemEntity>>();
-    var lister = dir.list(recursive: false);
-    lister.listen((file) => files.add(file),
-        // should also register onError
-        onDone: () => completer.complete(files));
-
-    return completer.future;
-  }
-
-  void getItems(Directory path) async {
-    itemsInDir = await dirContents(path);
-    for (var i = 0; i < itemsInDir.length; i++) {
-      hovering.add(false);
-    }
-
-    currentPath = path;
-    parentPath = path.parent;
-    setState(() {});
-  }
-
-  Future<void> folderCreateDialog() async {
-    String folderName = "";
+  // Utility function to help build dialogs
+  Future<void> dialogDisplayer(
+      Widget child, Widget title, List<Widget> actions) async {
     return showDialog<void>(
       context: context,
-      barrierDismissible: false, // user must tap button!
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text(
-            'Create Folder',
-            style: TextStyle(color: Colors.white),
-          ),
+          title: title,
           backgroundColor: Colors.blueGrey[800],
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                TextField(
-                  onChanged: (name) {
-                    folderName = name;
-                  },
-                  cursorColor: Colors.orange,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                      enabledBorder: const UnderlineInputBorder(
-                        borderSide: BorderSide(color: Colors.blueGrey),
-                      ),
-                      focusedBorder: const UnderlineInputBorder(
-                        borderSide: BorderSide(color: Colors.orange),
-                      ),
-                      border: const UnderlineInputBorder(),
-                      hintText: "Folder Name",
-                      hintStyle: TextStyle(color: Colors.blueGrey[300])),
-                )
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text(
-                'Approve',
-                style: TextStyle(color: Colors.white),
-              ),
-              onPressed: () {
-                Directory("${currentPath.path}\\$folderName").createSync();
-                getItems(currentPath);
-                setState(() {});
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: const Text(
-                'Cancel',
-                style: TextStyle(color: Colors.white),
-              ),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
+          content: child,
+          actions: actions,
         );
       },
     );
   }
 
+  // gets a list of all files and directories in given path as FileSystemEntity
+  Future<List<FileSystemEntity>> dirContents(Directory dir) {
+    var files = <FileSystemEntity>[];
+    var completer = Completer<List<FileSystemEntity>>();
+    var lister = dir.list(recursive: false);
+    lister.listen((file) => files.add(file),
+        onDone: () => completer.complete(files));
+    return completer.future;
+  }
+
+  // initializes hover for each item, waits for directory contents and sets current path and parent path
+  void getItems(Directory path) async {
+    itemsInDir = await dirContents(path);
+    for (var i = 0; i < itemsInDir.length; i++) {
+      hovering.add(false);
+    }
+    currentPath = path;
+    parentPath = path.parent;
+    setState(() {});
+  }
+
+  // Shows a dialog for creating folders
+  Future<void> folderCreateDialog() async {
+    String folderName = "";
+    return dialogDisplayer(
+        SingleChildScrollView(
+          child: ListBody(
+            children: <Widget>[
+              TextField(
+                onChanged: (name) {
+                  folderName = name;
+                },
+                cursorColor: Colors.orange,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                    enabledBorder: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.blueGrey),
+                    ),
+                    focusedBorder: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.orange),
+                    ),
+                    border: const UnderlineInputBorder(),
+                    hintText: "Folder Name",
+                    hintStyle: TextStyle(color: Colors.blueGrey[300])),
+              )
+            ],
+          ),
+        ),
+        const Text(
+          "Create Folder",
+          style: TextStyle(color: Colors.white),
+        ),
+        <Widget>[
+          TextButton(
+            child: const Text(
+              'Approve',
+              style: TextStyle(color: Colors.white),
+            ),
+            onPressed: () {
+              Directory("${currentPath.path}\\$folderName").createSync();
+              getItems(currentPath);
+              setState(() {});
+              Navigator.of(context).pop();
+            },
+          ),
+          TextButton(
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Colors.white),
+            ),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ]);
+  }
+
+  // shows deleting a file dialog
+  Future<void> deleteDialog(FileSystemEntity toBeDeletedFile) async {
+    return dialogDisplayer(
+        SingleChildScrollView(
+          child: Text(path.basename(toBeDeletedFile.path),
+              style: const TextStyle(color: Colors.white)),
+        ),
+        const Text(
+          "Are you Sure you want to delete",
+          style: TextStyle(
+            color: Colors.white,
+          ),
+        ),
+        <Widget>[
+          TextButton(
+              onPressed: () {
+                deleteFile(toBeDeletedFile);
+                getItems(toBeDeletedFile.parent);
+                Navigator.of(context).pop();
+              },
+              child:
+                  const Text("Approve", style: TextStyle(color: Colors.white))),
+          TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text(
+                "Cancel",
+                style: TextStyle(color: Colors.white),
+              ))
+        ]);
+  }
+
+  // shows dialog for renaming file
+  Future<void> renameDialog(FileSystemEntity sourceFile) async {
+    String newName = "";
+    return dialogDisplayer(
+        SingleChildScrollView(
+          child: ListBody(
+            children: <Widget>[
+              TextField(
+                onChanged: (name) {
+                  newName = name;
+                },
+                cursorColor: Colors.orange,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                    enabledBorder: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.blueGrey),
+                    ),
+                    focusedBorder: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.orange),
+                    ),
+                    border: const UnderlineInputBorder(),
+                    hintText: "New Name",
+                    hintStyle: TextStyle(color: Colors.blueGrey[300])),
+              )
+            ],
+          ),
+        ),
+        const Text(
+          "Rename File",
+          style: TextStyle(
+            color: Colors.white,
+          ),
+        ),
+        <Widget>[
+          TextButton(
+              onPressed: () {
+                renameFile(sourceFile, newName);
+                getItems(sourceFile.parent);
+                Navigator.of(context).pop();
+              },
+              child:
+                  const Text("Approve", style: TextStyle(color: Colors.white))),
+          TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text(
+                "Cancel",
+                style: TextStyle(color: Colors.white),
+              ))
+        ]);
+  }
+
+  // Buttons for navigating directories, creating folders and importing images
   Widget directoryButtons() {
     return Row(
       children: [
@@ -135,29 +240,34 @@ class _FileSystemState extends State<FilesAndDirectories> {
             width: 125,
             child: InkWell(
               child: const Icon(
-                Icons.home_rounded,
+                Icons.home_outlined,
                 color: Colors.white,
               ),
-              onTap: () => {getItems(Directory(".\\"))},
+              onTap: () => {getItems(projectPath.absolute)},
             ),
           ),
         ),
         Flexible(
-          child: Container(
-            margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
-            color: color,
-            padding: const EdgeInsets.symmetric(vertical: 2.5, horizontal: 5),
-            width: 125,
-            child: InkWell(
-              child: const Icon(
-                Icons.keyboard_backspace_rounded,
-                color: Colors.white,
+          child: DragTarget<FileSystemEntity>(onAccept: (data) {
+            moveFile(data, currentPath.parent.path);
+            getItems(currentPath);
+          }, builder: (context, candidateData, rejectedData) {
+            return Container(
+              margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
+              color: color,
+              padding: const EdgeInsets.symmetric(vertical: 2.5, horizontal: 5),
+              width: 125,
+              child: InkWell(
+                child: const Icon(
+                  Icons.keyboard_backspace_outlined,
+                  color: Colors.white,
+                ),
+                onTap: () => {
+                  if (currentPath.path != projectPath.path) getItems(parentPath)
+                },
               ),
-              onTap: () => {
-                getItems(parentPath),
-              },
-            ),
-          ),
+            );
+          }),
         ),
         Flexible(
             child: Container(
@@ -173,18 +283,43 @@ class _FileSystemState extends State<FilesAndDirectories> {
             onTap: () => {folderCreateDialog()},
           ),
         )),
+        Flexible(
+            child: Container(
+          margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
+          color: color,
+          padding: const EdgeInsets.symmetric(vertical: 2.5, horizontal: 5),
+          width: 125,
+          child: InkWell(
+            child: const Icon(
+              Icons.file_open_outlined,
+              color: Colors.white,
+            ),
+            onTap: () => {getFiles()},
+          ),
+        )),
       ],
     );
   }
 
+  // Uses directory and files to create draggable and clickable directories,
+  // If a folder is clicked changes current directory to the click targets' directory
+  // if a file is clicked nothing happens
+  // if file doesn't exist, returns to main project path
   Expanded dragableDirectories() {
     return Expanded(
       child: ListView.builder(
           itemCount: itemsInDir.length,
           itemBuilder: (BuildContext context, int index) {
+            final item = itemsInDir[index];
             return InkWell(
               onTap: () => {
-                getItems(Directory(itemsInDir[index].path)),
+                // removes cuntionality for files
+                if (item.existsSync() && item is! File)
+                  getItems(Directory(item.path))
+                else if (item is File)
+                  {}
+                else
+                  getItems(projectPath)
               },
               onHover: (ishover) {
                 if (ishover == true) {
@@ -196,18 +331,21 @@ class _FileSystemState extends State<FilesAndDirectories> {
               },
               child: DragTarget<FileSystemEntity>(
                 onAccept: (data) {
-                  
-                  setState(() {});
+                  // can't drop items to themselves
+                  if (data.path != item.path) {
+                    moveFile(data, item.path);
+                    getItems(item.parent);
+                  }
                 },
                 builder: (context, candidateData, rejectedData) {
                   return Draggable(
-                    data: itemsInDir[index],
+                    data: item,
                     feedback: Container(
                         margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
                         color: color,
                         padding: const EdgeInsets.symmetric(
                             vertical: 1, horizontal: 5),
-                        child: (itemsInDir[index] is! File)
+                        child: (item is! File)
                             ? Icon(
                                 Icons.folder,
                                 size: 28,
@@ -227,7 +365,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
                           mainAxisAlignment: MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (itemsInDir[index] is File)
+                            if (item is File)
                               const Icon(
                                 Icons.insert_drive_file_rounded,
                                 size: 28,
@@ -242,14 +380,36 @@ class _FileSystemState extends State<FilesAndDirectories> {
                             const SizedBox(
                               width: 5,
                             ),
-                            Flexible(
+                            Expanded(
                               child: Text(
-                                itemsInDir[index].path,
+                                path.basename(item.path),
                                 style: const TextStyle(
                                     color: Colors.white,
                                     overflow: TextOverflow.fade),
                               ),
                             ),
+                            InkWell(
+                              child: const Icon(
+                                Icons.edit,
+                                size: 24,
+                                color: Colors.white,
+                              ),
+                              onTap: () {
+                                renameDialog(item);
+                                getItems(item.parent);
+                              },
+                            ),
+                            InkWell(
+                              child: const Icon(
+                                Icons.delete_forever_outlined,
+                                size: 24,
+                                color: Colors.white,
+                              ),
+                              onTap: () {
+                                deleteDialog(item);
+                                getItems(item.parent);
+                              },
+                            )
                           ],
                         )),
                   );
@@ -260,20 +420,65 @@ class _FileSystemState extends State<FilesAndDirectories> {
     );
   }
 
-  void moveFolder(Directory folderPath, String destinationPath) async {
-    try {
-      folderPath.rename(destinationPath);
-    } catch (e) {
-      folderPath.rename(destinationPath);
+  // waits for the file to be moved into specified folder path
+  void moveFile(FileSystemEntity sourceFile, String newPath) async {
+    if (Directory(newPath).existsSync()) {
+      String fileName = path.basename(sourceFile.path);
+      String destination = "$newPath\\$fileName";
+      sourceFile.rename(destination);
     }
   }
 
-  void moveFile(File sourceFile, String newPath) async {
-    try {
-      await sourceFile.rename(newPath);
-    } on FileSystemException {
-      await sourceFile.copy(newPath);
-      await sourceFile.delete();
+  // file picker to get images
+  void getFiles() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.custom,
+        allowedExtensions: ['png', 'jpg']);
+
+    if (result != null) {
+      List<File> files =
+          result.paths.map((fromPath) => File(fromPath!)).toList();
+      for (var image in files) {
+        moveFile(image, "${projectPath.path}\\Assets");
+      }
+    } else {
+      // didn't pick File
     }
+    currentPath = projectPath.absolute;
+    getItems(currentPath);
+  }
+
+  //************** DANGEROUS **************//
+  //*deletes files and folders recursively*//
+  void deleteFile(FileSystemEntity sourceFile) {
+    if (sourceFile.existsSync()) {
+      sourceFile.deleteSync(recursive: true);
+    }
+  }
+
+  //************** DANGEROUS **************//
+  //*     renames files and folders       *//
+  void renameFile(FileSystemEntity sourceFile, String newName) {
+    if (sourceFile is! File) {
+      var path = sourceFile.path;
+      var lastSeparator = path.lastIndexOf(Platform.pathSeparator);
+      var newPath = path.substring(0, lastSeparator + 1) + newName;
+      sourceFile.rename(newPath);
+    } else if (sourceFile is File) {
+      String extentionName = path.basename(sourceFile.path);
+      var pos = extentionName.lastIndexOf(".");
+      extentionName = extentionName.substring(pos, extentionName.length);
+
+      String sourcePath = sourceFile.path;
+      int lastSeparator = sourcePath.lastIndexOf(Platform.pathSeparator);
+      String newPath =
+          sourcePath.substring(0, lastSeparator + 1) + newName + extentionName;
+      if (!File(newPath).existsSync()) {
+        sourceFile.rename(newPath);
+      } else {
+        // show that file name already exists
+      }
+    } else {}
   }
 }
