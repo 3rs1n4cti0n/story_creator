@@ -58,7 +58,7 @@ class _HomeState extends State<Home> {
         children: [
           FilesAndDirectories(),
           // TODO: implement StorylineWindow
-          //StorylineWindow(),
+          //StorylineTabs(),
           // TODO: implement Inspector for branches
           //Inspector(),
         ],
