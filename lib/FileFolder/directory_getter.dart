@@ -306,6 +306,13 @@ class _FileSystemState extends State<FilesAndDirectories> {
                                     overflow: TextOverflow.fade),
                               ),
                             ),
+                            InkWell(
+                              child: const Icon(Icons.delete_outlined),
+                              onTap: () {
+                                deleteFile(item);
+                                
+                              },
+                            )
                           ],
                         )),
                   );
@@ -341,12 +348,17 @@ class _FileSystemState extends State<FilesAndDirectories> {
       List<File> files =
           result.paths.map((fromPath) => File(fromPath!)).toList();
       for (var image in files) {
-        moveFile(image, "${projectPath.path}\\Assets");
+        movefile(image, "${projectPath.path}\\Assets");
       }
     } else {
       // didn't pick File
     }
     currentPath = projectPath.absolute;
     getItems(currentPath);
+  }
+
+  Future<void> deleteFile(FileSystemEntity sourceFile) async
+  {
+    await sourceFile.delete();
   }
 }
