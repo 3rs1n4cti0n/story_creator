@@ -28,7 +28,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
 
   @override
   void initState() {
-    getItems(projectPath.absolute);
+    dirContents(projectPath.absolute).then((value) => null);
     super.initState();
   }
 
@@ -66,24 +66,23 @@ class _FileSystemState extends State<FilesAndDirectories> {
   }
 
   // gets a list of all files and directories in given path as FileSystemEntity
-  Future<List<FileSystemEntity>> dirContents(Directory dir) {
+  Future<void> dirContents(Directory dir) async {
     var files = <FileSystemEntity>[];
     var completer = Completer<List<FileSystemEntity>>();
     var lister = dir.list(recursive: false);
     lister.listen((file) => files.add(file),
         onDone: () => completer.complete(files));
-    return completer.future;
-  }
 
-  // initializes hover for each item, waits for directory contents and sets current path and parent path
-  void getItems(Directory path) async {
-    itemsInDir = await dirContents(path);
+    itemsInDir = await completer.future;
     for (var i = 0; i < itemsInDir.length; i++) {
       hovering.add(false);
     }
-    currentPath = path;
-    parentPath = path.parent;
-    setState(() {});
+    currentPath = dir;
+    parentPath = dir.parent;
+
+    setState(() {
+      itemsInDir;
+    });
   }
 
   // Shows a dialog for creating folders
@@ -125,8 +124,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
             ),
             onPressed: () {
               Directory("${currentPath.path}\\$folderName").createSync();
-              getItems(currentPath);
-              setState(() {});
+              dirContents(currentPath).then((value) => null);
               Navigator.of(context).pop();
             },
           ),
@@ -159,7 +157,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
           TextButton(
               onPressed: () {
                 deleteFile(toBeDeletedFile);
-                getItems(toBeDeletedFile.parent);
+                dirContents(toBeDeletedFile.parent).then((value) => null);
                 Navigator.of(context).pop();
               },
               child:
@@ -212,7 +210,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
           TextButton(
               onPressed: () {
                 renameFile(sourceFile, newName);
-                getItems(sourceFile.parent);
+                dirContents(sourceFile.parent).then((value) => null);
                 Navigator.of(context).pop();
               },
               child:
@@ -246,14 +244,14 @@ class _FileSystemState extends State<FilesAndDirectories> {
                     Icons.home_outlined,
                     color: Colors.white,
                   ),
-                  onTap: () => {getItems(projectPath.absolute)},
+                  onTap: () async => {await dirContents(projectPath.absolute)},
                 ),
               ),
             ),
             Flexible(
-              child: DragTarget<FileSystemEntity>(onAccept: (data) {
-                moveFile(data, currentPath.parent.path);
-                getItems(currentPath);
+              child: DragTarget<FileSystemEntity>(onAccept: (data) async {
+                moveFile(data, currentPath.path);
+                await dirContents(currentPath);
               }, builder: (context, candidateData, rejectedData) {
                 return Container(
                   margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
@@ -266,9 +264,9 @@ class _FileSystemState extends State<FilesAndDirectories> {
                       Icons.keyboard_backspace_outlined,
                       color: Colors.white,
                     ),
-                    onTap: () => {
+                    onTap: () async => {
                       if (currentPath.path != projectPath.path)
-                        getItems(parentPath)
+                        await dirContents(parentPath),
                     },
                   ),
                 );
@@ -299,12 +297,11 @@ class _FileSystemState extends State<FilesAndDirectories> {
                   Icons.file_open_outlined,
                   color: Colors.white,
                 ),
-                onTap: () => {getFiles()},
+                onTap: () => {pickImages()},
               ),
             )),
           ],
         ),
-        
       ],
     );
   }
@@ -320,14 +317,14 @@ class _FileSystemState extends State<FilesAndDirectories> {
           itemBuilder: (BuildContext context, int index) {
             final item = itemsInDir[index];
             return InkWell(
-              onTap: () => {
-                // removes cuntionality for files
-                if (item.existsSync() && item is! File)
-                  getItems(Directory(item.path))
+              onTap: () async => {
+                // removes funtionality for files
+                if (await item.exists() && item is! File)
+                  await dirContents(Directory(item.path))
                 else if (item is File)
                   {}
                 else
-                  getItems(projectPath)
+                  await dirContents(projectPath),
               },
               onHover: (ishover) {
                 if (ishover == true) {
@@ -338,11 +335,11 @@ class _FileSystemState extends State<FilesAndDirectories> {
                 setState(() {});
               },
               child: DragTarget<FileSystemEntity>(
-                onAccept: (data) {
-                  // can't drop items to themselves
-                  if (data.path != item.path) {
-                    moveFile(data, item.path);
-                    getItems(item.parent);
+                onAccept: (data) async {
+                  // can't drop items to themselves or if its a file
+                  if (data.path != item.path && item is! File) {
+                    await moveFile(data, item.path);
+                    await dirContents(item.parent);
                   }
                 },
                 builder: (context, candidateData, rejectedData) {
@@ -402,9 +399,9 @@ class _FileSystemState extends State<FilesAndDirectories> {
                                 size: 24,
                                 color: Colors.white,
                               ),
-                              onTap: () {
+                              onTap: () async {
                                 renameDialog(item);
-                                getItems(item.parent);
+                                await dirContents(item.parent);
                               },
                             ),
                             InkWell(
@@ -413,9 +410,9 @@ class _FileSystemState extends State<FilesAndDirectories> {
                                 size: 24,
                                 color: Colors.white,
                               ),
-                              onTap: () {
+                              onTap: () async {
                                 deleteDialog(item);
-                                getItems(item.parent);
+                                await dirContents(item.parent);
                               },
                             )
                           ],
@@ -428,17 +425,18 @@ class _FileSystemState extends State<FilesAndDirectories> {
     );
   }
 
-  // waits for the file to be moved into specified folder path
-  void moveFile(FileSystemEntity sourceFile, String newPath) async {
-    if (Directory(newPath).existsSync()) {
-      String fileName = path.basename(sourceFile.path);
-      String destination = "$newPath\\$fileName";
-      sourceFile.rename(destination);
-    }
+  // moves the file to given path
+  Future<void> moveFile(FileSystemEntity sourceFile, String newPath) async {
+    if(!await Directory(newPath).exists()) return;
+
+    String fileName = path.basename(sourceFile.path);
+    String destination = "$newPath\\$fileName";
+    sourceFile.rename(destination);
+    await dirContents(sourceFile.parent);
   }
 
   // file picker to get images
-  void getFiles() async {
+  void pickImages() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
         allowMultiple: true,
         type: FileType.custom,
@@ -454,7 +452,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
       // didn't pick File
     }
     currentPath = projectPath.absolute;
-    getItems(currentPath);
+    await dirContents(currentPath);
   }
 
   //************** DANGEROUS **************//
