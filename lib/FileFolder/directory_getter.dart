@@ -250,7 +250,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
             ),
             Flexible(
               child: DragTarget<FileSystemEntity>(onAccept: (data) async {
-                moveFile(data, currentPath.path);
+                await moveFile(data, currentPath.parent.path);
                 await dirContents(currentPath);
               }, builder: (context, candidateData, rejectedData) {
                 return Container(
