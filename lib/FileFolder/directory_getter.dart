@@ -427,7 +427,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
 
   // moves the file to given path
   Future<void> moveFile(FileSystemEntity sourceFile, String newPath) async {
-    if(!await Directory(newPath).exists()) return;
+    if (!await Directory(newPath).exists()) return;
 
     String fileName = path.basename(sourceFile.path);
     String destination = "$newPath\\$fileName";
@@ -465,13 +465,14 @@ class _FileSystemState extends State<FilesAndDirectories> {
 
   //************** DANGEROUS **************//
   //*     renames files and folders       *//
-  void renameFile(FileSystemEntity sourceFile, String newName) {
+  Future<void> renameFile(FileSystemEntity sourceFile, String newName) async {
     String sourcePath = sourceFile.path;
     int lastSeparator = sourcePath.lastIndexOf(Platform.pathSeparator);
     if (sourceFile is! File) {
       // calculates new path without extension for folders
       var newPath = sourcePath.substring(0, lastSeparator + 1) + newName;
       sourceFile.rename(newPath);
+      await dirContents(sourceFile.parent);
     } else {
       // gets extension of file such as .png or .jpeg
       String extentionName = path.basename(sourceFile.path);
@@ -485,7 +486,11 @@ class _FileSystemState extends State<FilesAndDirectories> {
       // checks if file already exists or not
       if (!File(newPath).existsSync()) {
         sourceFile.rename(newPath);
+        await dirContents(sourceFile.parent);
       }
     }
+    setState(() {
+      
+    });
   }
 }
