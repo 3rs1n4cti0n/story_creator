@@ -4,6 +4,9 @@ import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/material.dart';
 import 'package:story_creator/FileFolder/directory_getter.dart';
 
+import 'Inspector/inspector.dart';
+import 'StoryLineTabs/story_line.dart';
+
 class Home extends StatefulWidget {
   const Home({super.key});
 
@@ -57,10 +60,8 @@ class _HomeState extends State<Home> {
       body: Row(
         children: [
           FilesAndDirectories(),
-          // TODO: implement StorylineWindow
-          //StorylineTabs(),
-          // TODO: implement Inspector for branches
-          //Inspector(),
+          Flexible(child: StoryLineTabs()),
+          Inspector(),
         ],
       ),
     );

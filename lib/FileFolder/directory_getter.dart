@@ -230,73 +230,81 @@ class _FileSystemState extends State<FilesAndDirectories> {
 
   // Buttons for navigating directories, creating folders and importing images
   Widget directoryButtons() {
-    return Row(
+    return Column(
       children: [
-        Flexible(
-          child: Container(
-            color: color,
-            margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
-            padding: const EdgeInsets.symmetric(vertical: 2.5, horizontal: 5),
-            width: 125,
-            child: InkWell(
-              child: const Icon(
-                Icons.home_outlined,
-                color: Colors.white,
+        Row(
+          children: [
+            Flexible(
+              child: Container(
+                color: color,
+                margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 2.5, horizontal: 5),
+                width: 125,
+                child: InkWell(
+                  child: const Icon(
+                    Icons.home_outlined,
+                    color: Colors.white,
+                  ),
+                  onTap: () => {getItems(projectPath.absolute)},
+                ),
               ),
-              onTap: () => {getItems(projectPath.absolute)},
             ),
-          ),
-        ),
-        Flexible(
-          child: DragTarget<FileSystemEntity>(onAccept: (data) {
-            moveFile(data, currentPath.parent.path);
-            getItems(currentPath);
-          }, builder: (context, candidateData, rejectedData) {
-            return Container(
+            Flexible(
+              child: DragTarget<FileSystemEntity>(onAccept: (data) {
+                moveFile(data, currentPath.parent.path);
+                getItems(currentPath);
+              }, builder: (context, candidateData, rejectedData) {
+                return Container(
+                  margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
+                  color: color,
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 2.5, horizontal: 5),
+                  width: 125,
+                  child: InkWell(
+                    child: const Icon(
+                      Icons.keyboard_backspace_outlined,
+                      color: Colors.white,
+                    ),
+                    onTap: () => {
+                      if (currentPath.path != projectPath.path)
+                        getItems(parentPath)
+                    },
+                  ),
+                );
+              }),
+            ),
+            Flexible(
+                child: Container(
               margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
               color: color,
               padding: const EdgeInsets.symmetric(vertical: 2.5, horizontal: 5),
               width: 125,
               child: InkWell(
                 child: const Icon(
-                  Icons.keyboard_backspace_outlined,
+                  Icons.create_new_folder_outlined,
                   color: Colors.white,
                 ),
-                onTap: () => {
-                  if (currentPath.path != projectPath.path) getItems(parentPath)
-                },
+                onTap: () => {folderCreateDialog()},
               ),
-            );
-          }),
+            )),
+            Flexible(
+                child: Container(
+              margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
+              color: color,
+              padding: const EdgeInsets.symmetric(vertical: 2.5, horizontal: 5),
+              width: 125,
+              child: InkWell(
+                child: const Icon(
+                  Icons.file_open_outlined,
+                  color: Colors.white,
+                ),
+                onTap: () => {getFiles()},
+              ),
+            )),
+          ],
         ),
-        Flexible(
-            child: Container(
-          margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
-          color: color,
-          padding: const EdgeInsets.symmetric(vertical: 2.5, horizontal: 5),
-          width: 125,
-          child: InkWell(
-            child: const Icon(
-              Icons.create_new_folder_outlined,
-              color: Colors.white,
-            ),
-            onTap: () => {folderCreateDialog()},
-          ),
-        )),
-        Flexible(
-            child: Container(
-          margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
-          color: color,
-          padding: const EdgeInsets.symmetric(vertical: 2.5, horizontal: 5),
-          width: 125,
-          child: InkWell(
-            child: const Icon(
-              Icons.file_open_outlined,
-              color: Colors.white,
-            ),
-            onTap: () => {getFiles()},
-          ),
-        )),
+        
       ],
     );
   }

@@ -7,6 +7,7 @@ class Branch {
   late List<String> story;
   late Image backgroundImage;
   late List<Character> characters;
+  double x = 0,y = 0;
   List<Branch> storyPath = [];
 
   void deleteStoryPath(int index)
