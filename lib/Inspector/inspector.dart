@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class Inspector extends StatefulWidget {
-  Inspector({Key? key}) : super(key: key);
+  const Inspector({Key? key}) : super(key: key);
 
   @override
   State<Inspector> createState() => _InspectorState();
@@ -15,7 +15,7 @@ class _InspectorState extends State<Inspector> {
       width: 250,
       height: double.infinity,
       child: Column(
-        children: [
+        children: const [
           
         ],
       ),

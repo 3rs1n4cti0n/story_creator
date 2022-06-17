@@ -60,8 +60,8 @@ class _HomeState extends State<Home> {
       body: Row(
         children: [
           FilesAndDirectories(),
-          Flexible(child: StoryLineTabs()),
-          Inspector(),
+          const Flexible(child: StoryLineTabs()),
+          const Inspector(),
         ],
       ),
     );

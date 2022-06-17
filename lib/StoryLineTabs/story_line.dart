@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class StoryLineTabs extends StatefulWidget {
-  StoryLineTabs({Key? key}) : super(key: key);
+  const StoryLineTabs({Key? key}) : super(key: key);
 
   @override
   State<StoryLineTabs> createState() => _StoryLineTabsState();
