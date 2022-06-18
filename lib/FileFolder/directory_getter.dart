@@ -41,9 +41,9 @@ class _FileSystemState extends State<FilesAndDirectories> {
       onDragDone: (details) async {
         var files = details.files;
         for (var element in files) {
-          await moveFile(File(element.path), "${projectPath.path}\\Assets");
+          // depentding if its a file or not give file or directory
+          await moveFile(await FileSystemEntity.isFile(element.path) ? File(element.path) : Directory(element.path), "${projectPath.path}\\Assets");
         }
-        
         Future.delayed(const Duration(seconds: 1));
         currentPath = projectPath;
         await dirContents(Directory("${projectPath.path}\\Assets"));
