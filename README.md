@@ -10,6 +10,6 @@ A flutter project made for creating visual novels with no prior knowlegde of cod
 
 -Open project in Visual Studio Code.
 
--In terminal type `flutter run -d windows".`
+-In terminal type `flutter run -d windows`.
 
 -Wait for the project to build and it will start.
