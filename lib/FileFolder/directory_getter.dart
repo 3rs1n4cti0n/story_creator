@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:file_picker/file_picker.dart';
+import 'package:desktop_drop/desktop_drop.dart';
 
 class FilesAndDirectories extends StatefulWidget {
   FilesAndDirectories({Key? key}) : super(key: key);
@@ -18,6 +19,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
 
   // to add color change on hover
   List<bool> hovering = [];
+  bool isDropHovering = false;
   Color? hoverColor = Colors.blueGrey;
   Color? color = Colors.transparent;
 
@@ -35,15 +37,28 @@ class _FileSystemState extends State<FilesAndDirectories> {
   // Build function for Directory Path Navigator Menu
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.blueGrey[800],
-      width: 250,
-      height: double.infinity,
-      child: Column(
-        children: [
-          if (MediaQuery.of(context).size.height > 55) directoryButtons(),
-          dragableDirectories(),
-        ],
+    return DropTarget(
+      onDragDone: (details) async {
+        var files = details.files;
+        for (var element in files) {
+          await moveFile(File(element.path), "${projectPath.path}\\Assets");
+        }
+        
+        Future.delayed(const Duration(seconds: 1));
+        currentPath = projectPath;
+        await dirContents(Directory("${projectPath.path}\\Assets"));
+        files.clear();
+      },
+      child: Container(
+        color: isDropHovering ? Colors.orange : Colors.blueGrey[800],
+        width: 250,
+        height: double.infinity,
+        child: Column(
+          children: [
+            if (MediaQuery.of(context).size.height > 55) directoryButtons(),
+            dragableDirectories(),
+          ],
+        ),
       ),
     );
   }
@@ -79,9 +94,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
     }
     currentPath = dir;
     parentPath = dir.parent;
-
     setState(() {
-      itemsInDir;
     });
   }
 
@@ -297,7 +310,13 @@ class _FileSystemState extends State<FilesAndDirectories> {
                   Icons.file_open_outlined,
                   color: Colors.white,
                 ),
-                onTap: () => {pickImages()},
+                onTap: () async => {
+                  await pickImages(),
+                  currentPath = projectPath.absolute,
+                  await dirContents(projectPath),
+                  setState(() {
+                  })
+                },
               ),
             )),
           ],
@@ -400,7 +419,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
                                 color: Colors.white,
                               ),
                               onTap: () async {
-                                renameDialog(item);
+                                await renameDialog(item);
                                 await dirContents(item.parent);
                               },
                             ),
@@ -411,7 +430,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
                                 color: Colors.white,
                               ),
                               onTap: () async {
-                                deleteDialog(item);
+                                await deleteDialog(item);
                                 await dirContents(item.parent);
                               },
                             )
@@ -427,8 +446,6 @@ class _FileSystemState extends State<FilesAndDirectories> {
 
   // moves the file to given path
   Future<void> moveFile(FileSystemEntity sourceFile, String newPath) async {
-    if (!await Directory(newPath).exists()) return;
-
     String fileName = path.basename(sourceFile.path);
     String destination = "$newPath\\$fileName";
     sourceFile.rename(destination);
@@ -436,7 +453,8 @@ class _FileSystemState extends State<FilesAndDirectories> {
   }
 
   // file picker to get images
-  void pickImages() async {
+  //* not used because modifies currentPath to picked files' path
+  Future<void> pickImages() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
         allowMultiple: true,
         type: FileType.custom,
@@ -451,13 +469,15 @@ class _FileSystemState extends State<FilesAndDirectories> {
     } else {
       // didn't pick File
     }
-    currentPath = projectPath.absolute;
-    await dirContents(currentPath);
+    await dirContents(projectPath);
+    setState(() {
+      
+    });
   }
 
   //************** DANGEROUS **************//
   //*deletes files and folders recursively*//
-  void deleteFile(FileSystemEntity sourceFile) {
+  Future<void> deleteFile(FileSystemEntity sourceFile) async {
     if (sourceFile.existsSync()) {
       sourceFile.deleteSync(recursive: true);
     }
@@ -489,8 +509,6 @@ class _FileSystemState extends State<FilesAndDirectories> {
         await dirContents(sourceFile.parent);
       }
     }
-    setState(() {
-      
-    });
+    setState(() {});
   }
 }
