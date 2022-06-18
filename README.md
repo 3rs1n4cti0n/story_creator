@@ -2,11 +2,11 @@
 
 A flutter project made for creating visual novels with no prior knowlegde of coding.
 
-## Instalation
+## Instalation and Running
 
 -Install [Flutter 3.1.0](https://github.com/flutter/flutter.git) and [Visual Studio Code](https://code.visualstudio.com/).
 
--Download zip file or git clone the project.
+-Download zip file or `git clone https://github.com/3rs1n4cti0n/story_creator.git`.
 
 -Open project in Visual Studio Code.
 
