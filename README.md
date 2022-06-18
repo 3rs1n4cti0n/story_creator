@@ -1,16 +1,12 @@
-# story_creator
+# RBT Visual Novel Maker
 
-A new Flutter project.
+A flutter project made for creating visual novels with no prior knowlegde of coding.
 
-## Getting Started
+## Instalation
 
-This project is a starting point for a Flutter application.
+Install [Flutter 3.1.0](https://github.com/flutter/flutter.git) and [Visual Studio Code](https://code.visualstudio.com/).
+Download zip file or git clone the project.
+Open project in Visual Studio Code.
+In terminal type "flutter run -d windows".
+Wait for the project to build and it will start.
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
