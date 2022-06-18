@@ -1,4 +1,3 @@
-// ignore_for_file: prefer_const_constructors_in_immutables
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -7,23 +6,23 @@ import 'package:file_picker/file_picker.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 
 class FilesAndDirectories extends StatefulWidget {
-  FilesAndDirectories({Key? key}) : super(key: key);
+  const FilesAndDirectories({Key? key}) : super(key: key);
 
   @override
   State<FilesAndDirectories> createState() => _FileSystemState();
 }
 
 class _FileSystemState extends State<FilesAndDirectories> {
-  // for getting files and directories
+  /// for getting files and directories
   List<FileSystemEntity> itemsInDir = [];
 
-  // to add color change on hover
+  /// to add color change on hover
   List<bool> hovering = [];
   bool isDropHovering = false;
   Color? hoverColor = Colors.blueGrey;
   Color? color = Colors.transparent;
 
-  // caching project path due to file picker changing working directory
+  /// caching project path due to file picker changing working directory
   final Directory projectPath = Directory(Directory.current.path);
   late Directory currentPath;
   late Directory parentPath;
@@ -34,14 +33,12 @@ class _FileSystemState extends State<FilesAndDirectories> {
     super.initState();
   }
 
-  // Build function for Directory Path Navigator Menu
   @override
   Widget build(BuildContext context) {
     return DropTarget(
       onDragDone: (details) async {
         var files = details.files;
         for (var element in files) {
-          // depentding if its a file or not give file or directory
           await moveFile(await FileSystemEntity.isFile(element.path) ? File(element.path) : Directory(element.path), "${projectPath.path}\\Assets");
         }
         Future.delayed(const Duration(seconds: 1));
@@ -63,7 +60,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
     );
   }
 
-  // Utility function to help build dialogs
+  // Helper function to build dialogs
   Future<void> dialogDisplayer(
       Widget child, Widget title, List<Widget> actions) async {
     return showDialog<void>(
@@ -80,7 +77,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
     );
   }
 
-  // gets a list of all files and directories in given path as FileSystemEntity
+  // Gets a list of all files and directories in given path
   Future<void> dirContents(Directory dir) async {
     var files = <FileSystemEntity>[];
     var completer = Completer<List<FileSystemEntity>>();
@@ -98,7 +95,6 @@ class _FileSystemState extends State<FilesAndDirectories> {
     });
   }
 
-  // Shows a dialog for creating folders
   Future<void> folderCreateDialog() async {
     String folderName = "";
     return dialogDisplayer(
@@ -153,7 +149,6 @@ class _FileSystemState extends State<FilesAndDirectories> {
         ]);
   }
 
-  // shows deleting a file dialog
   Future<void> deleteDialog(FileSystemEntity toBeDeletedFile) async {
     return dialogDisplayer(
         SingleChildScrollView(
@@ -186,7 +181,6 @@ class _FileSystemState extends State<FilesAndDirectories> {
         ]);
   }
 
-  // shows dialog for renaming file
   Future<void> renameDialog(FileSystemEntity sourceFile) async {
     String newName = "";
     return dialogDisplayer(
@@ -239,7 +233,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
         ]);
   }
 
-  // Buttons for navigating directories, creating folders and importing images
+  // Navigation buttons for directories, creating folders and importing images
   Widget directoryButtons() {
     return Column(
       children: [
@@ -326,6 +320,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
   }
 
   // Uses directory and files to create draggable and clickable directories,
+  //
   // If a folder is clicked changes current directory to the click targets' directory
   // if a file is clicked nothing happens
   // if file doesn't exist, returns to main project path
@@ -355,7 +350,6 @@ class _FileSystemState extends State<FilesAndDirectories> {
               },
               child: DragTarget<FileSystemEntity>(
                 onAccept: (data) async {
-                  // can't drop items to themselves or if its a file
                   if (data.path != item.path && item is! File) {
                     await moveFile(data, item.path);
                     await dirContents(item.parent);
@@ -444,7 +438,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
     );
   }
 
-  // moves the file to given path
+  // Moves source file to given path
   Future<void> moveFile(FileSystemEntity sourceFile, String newPath) async {
     String fileName = path.basename(sourceFile.path);
     String destination = "$newPath\\$fileName";
@@ -452,8 +446,8 @@ class _FileSystemState extends State<FilesAndDirectories> {
     await dirContents(sourceFile.parent);
   }
 
-  // file picker to get images
-  //* not used because modifies currentPath to picked files' path
+  // Picks file using file_picker package
+  //* Modifies current path to picked file path
   Future<void> pickImages() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
         allowMultiple: true,
@@ -476,7 +470,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
   }
 
   //************** DANGEROUS **************//
-  //*deletes files and folders recursively*//
+  //*Deletes files and folders recursively*//
   Future<void> deleteFile(FileSystemEntity sourceFile) async {
     if (sourceFile.existsSync()) {
       sourceFile.deleteSync(recursive: true);
@@ -484,26 +478,24 @@ class _FileSystemState extends State<FilesAndDirectories> {
   }
 
   //************** DANGEROUS **************//
-  //*     renames files and folders       *//
+  //*     Renames files and folders       *//
   Future<void> renameFile(FileSystemEntity sourceFile, String newName) async {
     String sourcePath = sourceFile.path;
     int lastSeparator = sourcePath.lastIndexOf(Platform.pathSeparator);
     if (sourceFile is! File) {
-      // calculates new path without extension for folders
+      // folders
       var newPath = sourcePath.substring(0, lastSeparator + 1) + newName;
       sourceFile.rename(newPath);
       await dirContents(sourceFile.parent);
     } else {
-      // gets extension of file such as .png or .jpeg
+      // file with extension
       String extentionName = path.basename(sourceFile.path);
       var pos = extentionName.lastIndexOf(".");
       extentionName = extentionName.substring(pos, extentionName.length);
 
-      // calculates new path with extention
       String newPath =
           sourcePath.substring(0, lastSeparator + 1) + newName + extentionName;
 
-      // checks if file already exists or not
       if (!File(newPath).existsSync()) {
         sourceFile.rename(newPath);
         await dirContents(sourceFile.parent);

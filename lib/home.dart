@@ -58,10 +58,10 @@ class _HomeState extends State<Home> {
           actions: windowFrameButtons,
           leading: functionalityMenu(context)),
       body: Row(
-        children: [
+        children: const [
           FilesAndDirectories(),
-          const Flexible(child: StoryLineTabs()),
-          const Inspector(),
+          Flexible(child: StoryLineTabs()),
+          Inspector(),
         ],
       ),
     );
