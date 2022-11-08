@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 import 'package:file_picker/file_picker.dart';
 
@@ -18,6 +19,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
 
   // to add color change on hover
   List<bool> hovering = [];
+  bool isParentDirButtonHover = false;
   Color? hoverColor = Colors.blueGrey;
   Color? color = Colors.transparent;
 
@@ -42,8 +44,72 @@ class _FileSystemState extends State<FilesAndDirectories> {
       child: Column(
         children: [
           if (MediaQuery.of(context).size.height > 55) directoryButtons(),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 3.0),
+            child: Divider(
+              height: 0,
+              color: Colors.white.withOpacity(0.3),
+            ),
+          ),
+          parentDirectory(),
           dragableDirectories(),
         ],
+      ),
+    );
+  }
+
+  Widget parentDirectory() {
+    return Tooltip(
+      decoration: BoxDecoration(
+          color: Colors.orange.withOpacity(0.8),
+          borderRadius: const BorderRadius.all(Radius.circular(20))),
+      message: "Parent Directory",
+      child: DragTarget<FileSystemEntity>(
+        onAccept: (data) {
+          moveFile(data, currentPath.parent.path);
+          getItems(currentPath);
+        },
+        builder: (context, candidateData, rejectedData) {
+          return InkWell(
+              onHover: (value) {
+                if (isParentDirButtonHover) {
+                  isParentDirButtonHover = false;
+                } else {
+                  isParentDirButtonHover = true;
+                }
+                setState(() {});
+              },
+              onTap: () {
+                if (currentPath.path != projectPath.path) {
+                  getItems(parentPath);
+                }
+              },
+              child: Container(
+                color: isParentDirButtonHover ? hoverColor : color,
+                child: Row(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(left: 5),
+                      child: Icon(
+                        Icons.folder,
+                        size: 28,
+                        color: Colors.orange[600],
+                      ),
+                    ),
+                    const SizedBox(
+                      width: 5,
+                    ),
+                    const Expanded(
+                      child: Text(
+                        "..",
+                        style: TextStyle(
+                            color: Colors.white, overflow: TextOverflow.fade),
+                      ),
+                    ),
+                  ],
+                ),
+              ));
+        },
       ),
     );
   }
@@ -79,6 +145,24 @@ class _FileSystemState extends State<FilesAndDirectories> {
   getItems(Directory path) async {
     await dirContents(path).then((value) {
       itemsInDir = value;
+      // sort by name order
+      itemsInDir.sort(
+        (a, b) {
+          return a.path
+              .split('\\')
+              .last
+              .toLowerCase()
+              .compareTo(b.path.split('\\').last.toLowerCase());
+        },
+      );
+      // sort by file type
+      itemsInDir.sort(((a, b) {
+        if (a is File) {
+          return 1;
+        } else {
+          return -1;
+        }
+      }));
       for (var i = 0; i < itemsInDir.length; i++) {
         hovering.add(false);
       }
@@ -100,6 +184,12 @@ class _FileSystemState extends State<FilesAndDirectories> {
                 onChanged: (name) {
                   folderName = name;
                 },
+                onSubmitted: (value) {
+                  Directory("${currentPath.path}\\$folderName").createSync();
+                  getItems(currentPath);
+                  Navigator.of(context).pop();
+                },
+                textInputAction: TextInputAction.done,
                 cursorColor: Colors.orange,
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
@@ -132,14 +222,23 @@ class _FileSystemState extends State<FilesAndDirectories> {
               Navigator.of(context).pop();
             },
           ),
-          TextButton(
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: Colors.white),
-            ),
-            onPressed: () {
-              Navigator.of(context).pop();
+          RawKeyboardListener(
+            focusNode: FocusNode(),
+            autofocus: true,
+            onKey: (v) {
+              if (v.logicalKey == LogicalKeyboardKey.escape) {
+                Navigator.of(context).pop();
+              }
             },
+            child: TextButton(
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.white),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
           ),
         ]);
   }
@@ -158,14 +257,27 @@ class _FileSystemState extends State<FilesAndDirectories> {
           ),
         ),
         <Widget>[
-          TextButton(
-              onPressed: () {
+          RawKeyboardListener(
+            focusNode: FocusNode(),
+            autofocus: true,
+            onKey: (v) {
+              if (v.logicalKey == LogicalKeyboardKey.enter) {
                 deleteFile(toBeDeletedFile);
                 getItems(toBeDeletedFile.parent);
                 Navigator.of(context).pop();
-              },
-              child:
-                  const Text("Approve", style: TextStyle(color: Colors.white))),
+              } else if (v.logicalKey == LogicalKeyboardKey.escape) {
+                Navigator.of(context).pop();
+              }
+            },
+            child: TextButton(
+                onPressed: () {
+                  deleteFile(toBeDeletedFile);
+                  getItems(toBeDeletedFile.parent);
+                  Navigator.of(context).pop();
+                },
+                child: const Text("Approve",
+                    style: TextStyle(color: Colors.white))),
+          ),
           TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
@@ -187,6 +299,11 @@ class _FileSystemState extends State<FilesAndDirectories> {
               TextField(
                 onChanged: (name) {
                   newName = name;
+                },
+                onSubmitted: (value) {
+                  renameFile(sourceFile, newName);
+                  getItems(sourceFile.parent);
+                  Navigator.of(context).pop();
                 },
                 cursorColor: Colors.orange,
                 style: const TextStyle(color: Colors.white),
@@ -232,75 +349,100 @@ class _FileSystemState extends State<FilesAndDirectories> {
 
   // Buttons for navigating directories, creating folders and importing images
   Widget directoryButtons() {
-    return Row(
-      children: [
-        Flexible(
-          child: Container(
-            color: color,
-            margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
-            padding: const EdgeInsets.symmetric(vertical: 2.5, horizontal: 5),
-            width: 125,
-            child: InkWell(
-              child: const Icon(
-                Icons.home_outlined,
-                color: Colors.white,
+    return IntrinsicHeight(
+      child: Row(
+        children: [
+          Flexible(
+            child: Tooltip(
+              decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.8),
+                  borderRadius: const BorderRadius.all(Radius.circular(20))),
+              message: "Home Directory",
+              child: Container(
+                color: color,
+                margin: const EdgeInsets.fromLTRB(0, 5, 0, 5),
+                width: 125,
+                child: InkWell(
+                  child: const Icon(
+                    Icons.home_outlined,
+                    color: Colors.white,
+                  ),
+                  onTap: () => {getItems(projectPath.absolute)},
+                ),
               ),
-              onTap: () => {getItems(projectPath.absolute)},
             ),
           ),
-        ),
-        Flexible(
-          child: DragTarget<FileSystemEntity>(onAccept: (data) {
-            moveFile(data, currentPath.parent.path);
-            getItems(currentPath);
-          }, builder: (context, candidateData, rejectedData) {
-            return Container(
-              margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
+          VerticalDivider(
+            width: 0,
+            color: Colors.white.withOpacity(0.3),
+          ),
+          /*Flexible(
+            child: DragTarget<FileSystemEntity>(onAccept: (data) {
+              moveFile(data, currentPath.parent.path);
+              getItems(currentPath);
+            }, builder: (context, candidateData, rejectedData) {
+              return Container(
+                margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
+                color: color,
+                padding: const EdgeInsets.symmetric(vertical: 2.5, horizontal: 5),
+                width: 125,
+                child: InkWell(
+                  child: const Icon(
+                    Icons.keyboard_backspace_outlined,
+                    color: Colors.white,
+                  ),
+                  onTap: () async => {
+                    if (currentPath.path != projectPath.path)
+                      getItems(parentPath),
+                  },
+                ),
+              );
+            }),
+          ),*/
+          Flexible(
+              child: Tooltip(
+            message: "Create New Folder",
+            decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.8),
+                borderRadius: const BorderRadius.all(Radius.circular(20))),
+            child: Container(
+              margin: const EdgeInsets.fromLTRB(0, 5, 0, 5),
               color: color,
-              padding: const EdgeInsets.symmetric(vertical: 2.5, horizontal: 5),
               width: 125,
               child: InkWell(
                 child: const Icon(
-                  Icons.keyboard_backspace_outlined,
+                  Icons.create_new_folder_outlined,
                   color: Colors.white,
                 ),
-                onTap: () async => {
-                  if (currentPath.path != projectPath.path)
-                    getItems(parentPath),
-                },
+                onTap: () => {folderCreateDialog()},
               ),
-            );
-          }),
-        ),
-        Flexible(
-            child: Container(
-          margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
-          color: color,
-          padding: const EdgeInsets.symmetric(vertical: 2.5, horizontal: 5),
-          width: 125,
-          child: InkWell(
-            child: const Icon(
-              Icons.create_new_folder_outlined,
-              color: Colors.white,
             ),
-            onTap: () => {folderCreateDialog()},
+          )),
+          VerticalDivider(
+            width: 0,
+            color: Colors.white.withOpacity(0.3),
           ),
-        )),
-        Flexible(
+          Flexible(
+              child: Tooltip(
+            decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.8),
+                borderRadius: const BorderRadius.all(Radius.circular(20))),
+            message: "Pick Images",
             child: Container(
-          margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
-          color: color,
-          padding: const EdgeInsets.symmetric(vertical: 2.5, horizontal: 5),
-          width: 125,
-          child: InkWell(
-            child: const Icon(
-              Icons.file_open_outlined,
-              color: Colors.white,
+              margin: const EdgeInsets.fromLTRB(0, 5, 0, 5),
+              color: color,
+              width: 125,
+              child: InkWell(
+                child: const Icon(
+                  Icons.file_open_outlined,
+                  color: Colors.white,
+                ),
+                onTap: () => {getFiles()},
+              ),
             ),
-            onTap: () => {getFiles()},
-          ),
-        )),
-      ],
+          )),
+        ],
+      ),
     );
   }
 
