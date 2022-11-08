@@ -66,7 +66,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
   }
 
   // gets a list of all files and directories in given path as FileSystemEntity
-  Future<List<FileSystemEntity>> dirContents(Directory dir) {
+  Future<List<FileSystemEntity>> dirContents(Directory dir) async {
     var files = <FileSystemEntity>[];
     var completer = Completer<List<FileSystemEntity>>();
     var lister = dir.list(recursive: false);
@@ -76,13 +76,16 @@ class _FileSystemState extends State<FilesAndDirectories> {
   }
 
   // initializes hover for each item, waits for directory contents and sets current path and parent path
-  void getItems(Directory path) async {
-    itemsInDir = await dirContents(path);
-    for (var i = 0; i < itemsInDir.length; i++) {
-      hovering.add(false);
-    }
-    currentPath = path;
-    parentPath = path.parent;
+  getItems(Directory path) async {
+    await dirContents(path).then((value) {
+      itemsInDir = value;
+      for (var i = 0; i < itemsInDir.length; i++) {
+        hovering.add(false);
+      }
+      currentPath = path;
+      parentPath = path.parent;
+    });
+
     setState(() {});
   }
 
@@ -126,7 +129,6 @@ class _FileSystemState extends State<FilesAndDirectories> {
             onPressed: () {
               Directory("${currentPath.path}\\$folderName").createSync();
               getItems(currentPath);
-              setState(() {});
               Navigator.of(context).pop();
             },
           ),
@@ -262,8 +264,9 @@ class _FileSystemState extends State<FilesAndDirectories> {
                   Icons.keyboard_backspace_outlined,
                   color: Colors.white,
                 ),
-                onTap: () => {
-                  if (currentPath.path != projectPath.path) getItems(parentPath)
+                onTap: () async => {
+                  if (currentPath.path != projectPath.path)
+                    getItems(parentPath),
                 },
               ),
             );
@@ -319,7 +322,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
                 else if (item is File)
                   {}
                 else
-                  getItems(projectPath)
+                  getItems(projectPath),
               },
               onHover: (ishover) {
                 if (ishover == true) {
@@ -425,8 +428,9 @@ class _FileSystemState extends State<FilesAndDirectories> {
     if (Directory(newPath).existsSync()) {
       String fileName = path.basename(sourceFile.path);
       String destination = "$newPath\\$fileName";
-      sourceFile.rename(destination);
+      await sourceFile.rename(destination);
     }
+    getItems(currentPath);
   }
 
   // file picker to get images
@@ -455,6 +459,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
     if (sourceFile.existsSync()) {
       sourceFile.deleteSync(recursive: true);
     }
+    getItems(currentPath);
   }
 
   //************** DANGEROUS **************//
@@ -465,7 +470,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
       var lastSeparator = path.lastIndexOf(Platform.pathSeparator);
       var newPath = path.substring(0, lastSeparator + 1) + newName;
       sourceFile.rename(newPath);
-    } else if (sourceFile is File) {
+    } else {
       String extentionName = path.basename(sourceFile.path);
       var pos = extentionName.lastIndexOf(".");
       extentionName = extentionName.substring(pos, extentionName.length);
@@ -479,6 +484,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
       } else {
         // show that file name already exists
       }
-    } else {}
+    }
+    getItems(currentPath);
   }
 }
