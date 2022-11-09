@@ -25,7 +25,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
 
   // caching project path due to file picker changing working directory
   final Directory projectPath = Directory(Directory.current.path);
-  late Directory currentPath;
+  late Directory currentPath = Directory(Directory.current.path);
   late Directory parentPath;
 
   @override
@@ -53,6 +53,34 @@ class _FileSystemState extends State<FilesAndDirectories> {
           ),
           parentDirectory(),
           dragableDirectories(),
+          Container(
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(),
+            child: Container(
+              margin: EdgeInsets.only(top: 10),
+              decoration: BoxDecoration(color: Colors.grey[900], boxShadow: [
+                BoxShadow(color: Colors.black, blurRadius: 3, spreadRadius: 1)
+              ]),
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 5),
+                      child: Text(
+                        "Path > ${currentPath.path}",
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                            fontSize: 12,
+                            decoration: TextDecoration.none,
+                            color: Colors.white,
+                            overflow: TextOverflow.fade),
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            ),
+          )
         ],
       ),
     );
@@ -163,6 +191,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
           return -1;
         }
       }));
+      hovering.clear();
       for (var i = 0; i < itemsInDir.length; i++) {
         hovering.add(false);
       }
@@ -452,6 +481,7 @@ class _FileSystemState extends State<FilesAndDirectories> {
   // if file doesn't exist, returns to main project path
   Expanded dragableDirectories() {
     return Expanded(
+      flex: 6,
       child: ListView.builder(
           itemCount: itemsInDir.length,
           itemBuilder: (BuildContext context, int index) {
@@ -491,15 +521,53 @@ class _FileSystemState extends State<FilesAndDirectories> {
                         padding: const EdgeInsets.symmetric(
                             vertical: 1, horizontal: 5),
                         child: (item is! File)
-                            ? Icon(
-                                Icons.folder,
-                                size: 28,
-                                color: Colors.orange[600],
+                            ? Container(
+                                decoration: BoxDecoration(
+                                    color:
+                                        color?.withOpacity(0.0) ?? Colors.red,
+                                    borderRadius: const BorderRadius.all(
+                                        Radius.circular(10))),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.folder,
+                                      size: 28,
+                                      color: Colors.orange[600],
+                                    ),
+                                    Text(
+                                      path.basename(item.path),
+                                      style: const TextStyle(
+                                          fontSize: 16,
+                                          decoration: TextDecoration.none,
+                                          color: Colors.white,
+                                          overflow: TextOverflow.fade),
+                                    )
+                                  ],
+                                ),
                               )
-                            : const Icon(
-                                Icons.insert_drive_file_rounded,
-                                size: 28,
-                                color: Colors.white,
+                            : Container(
+                                decoration: BoxDecoration(
+                                    color:
+                                        color?.withOpacity(0.0) ?? Colors.red,
+                                    borderRadius: const BorderRadius.all(
+                                        Radius.circular(10))),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.insert_drive_file_rounded,
+                                      size: 28,
+                                      color: Colors.white,
+                                    ),
+                                    Text(
+                                      path.basename(item.path),
+                                      style: const TextStyle(
+                                          fontSize: 16,
+                                          decoration: TextDecoration.none,
+                                          color: Colors.white,
+                                          overflow: TextOverflow.fade),
+                                    )
+                                  ],
+                                ),
                               )),
                     child: Container(
                         margin: const EdgeInsets.fromLTRB(0, 1, 0, 0),
